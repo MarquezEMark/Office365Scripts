@@ -29,16 +29,3 @@ This Function will add a custom domain to your office 365 tenant and automate it
 `Remove-CustomDomain -DomainName "MyDomain.com" -Username "admin@contoso.onmicrosoft.com" -Password "password"`
 
 This function will remove the custom domain and reset your tenant by disabling directory syncronisation and deleting all users from that domain 
-
-
-
-
-
-
-#remove a vanity Domain
-
-#Remove a sync
-
-
-
-
