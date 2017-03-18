@@ -12,6 +12,7 @@ In here, I am automating domain registration using Azure DNS. You should fisrt c
 `New-AzureDnsZone -DomainName "MyDomain.com" -Username "azureadmin@contoso.onmicrosoft.com" -Password "password" -ResourceGroupName "MyRG" -subscriptionName "MySub" -LoadBalancerDNSName "DNSName-of-LB-IPaddr"`
 
 This command is leveraging "New-AzureRmDnsZone" but it is not only creating a DNS zone but first it will connect to your Azure tenant then it will populate the zone with some entries.
+The LoadBalancerDNSName is optional and will be used to reate CName records.
 
 # DNS zone delegation
 Azure DNS is not a name registrar service (Azure DNS does not support purchasing of domain names) but a service providing name resolution using Microsoft Azure infrastructure thus we could leverage automation.
