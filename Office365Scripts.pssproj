@@ -27,6 +27,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="EnableUserLicenses.ps1" />
+    <Compile Include="ExchangeOnlineScripts.ps1" />
     <Compile Include="Office365scripts.ps1" />
     <Compile Include="README.md" />
   </ItemGroup>
