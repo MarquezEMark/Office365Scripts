@@ -22,6 +22,7 @@ write "##################New csonline session to get tenant id##################
 $session= New-CsOnlineSession -Credential $cred
 Import-PSSession $session -AllowClobber
 $TenantID = (Get-CsTenant ).TenantId
+Remove-PSSession $session
 
 # verify if Oauth server is already existing if not create a new oAuth Server with identity "microsoft.sts"
 $sts = Get-CsOAuthServer microsoft.sts -ErrorAction SilentlyContinue
@@ -61,13 +62,6 @@ else
 Set-CsOAuthConfiguration -ServiceName 00000004-0000-0ff1-ce00-000000000000
 
 #endregion
-
-#Download and install MSOL
-Invoke-WebRequest -Uri https://download.microsoft.com/download/5/0/1/5017D39B-8E29-48C8-91A8-8D0E4968E6D4/en/msoidcli_64.msi -OutFile c:\msoidcli_64.msi
-Start-Process -FilePath msiexec -ArgumentList /i, c:\msoidcli_64.msi, /quiet -Wait
-#Download and install MWindows Azure Active Directory Module for Windows PowerShell
-Invoke-WebRequest -Uri https://go.microsoft.com/fwlink/p/?linkid=236297 -OutFile c:\AdministrationConfig-en.msi
-Start-Process -FilePath msiexec -ArgumentList /i, c:\AdministrationConfig-en.msi, /quiet -Wait
 
 write "##################Connect to Office 365#########################"
 #Now you can login using that credential object:
