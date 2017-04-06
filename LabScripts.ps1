@@ -129,3 +129,23 @@ $users | ForEach-Object {
 Remove-PSSession $session
 #endregion#############################################################
 
+
+#region###########################     Block 10                ####### Dial plan for CloudPBX users
+#Configure Dial plans and normalization rules
+$CloudPBXDP= "CloudPBX_DialPlan"
+New-CsDialPlan -Identity $CloudPBXDP -SimpleName $CloudPBXDP
+Remove-CsVoiceNormalizationRule -Identity $CloudPBXDP'/Keep All'
+New-CsVoiceNormalizationRule -Identity $CloudPBXDP'/ToSkypeUKUsers' -Pattern "^(1\d{3})$" -Translation '+44118000$1'
+New-CsVoiceNormalizationRule -Identity $CloudPBXDP'/ToFreeSwitchUsers' -Pattern "^(2\d{3})$" -Translation '+44118000$1'
+New-CsVoiceNormalizationRule -Identity $CloudPBXDP'/ToInternationalE164' -Pattern "^(\+|00)(\d{10}\d+)$" -Translation '+$2'
+New-CsVoiceNormalizationRule -Identity $CloudPBXDP'/ToUKE164' -Pattern "^0(\d{10})$" -Translation '+44$1'
+
+#
+$users= @('pgas','dend','dgate','tbag')
+$users | ForEach-Object {
+   $upn = $_+'@'+$DomainName
+   write $upn
+   Grant-CsDialPlan -Identity $upn -PolicyName $CloudPBXDP
+
+}
+#endregion#############################################################
