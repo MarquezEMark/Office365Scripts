@@ -68,7 +68,7 @@ $cert = get-childitem Cert:\LocalMachine\My | where  {$_.FriendlyName -match 'Oa
 $DERCert    = 'C:\Cert_DER_Encoded.cer'
 $Base64Cert = 'C:\Cert_Base64_Encoded.cer' 
 Export-Certificate -Cert $cert -FilePath $DERCert
-Start-Process -FilePath 'certutil.exe' -ArgumentList "-encode $DERCert $Base64Cert" -WindowStyle Hidden
+Start-Process -FilePath 'certutil.exe' -ArgumentList "-encode $DERCert $Base64Cert" -WindowStyle Hidden -Wait
 
 #Import, encode, and assign the oAuth certificate that was exported earlier
 $certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate
