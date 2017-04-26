@@ -7,19 +7,14 @@ Function Enable-ExOnlineOauth {
 Param (		
 		[Parameter(Mandatory=$true, HelpMessage = "Please enter the Domain name you want to remove")]
         [String]$DomainName,
-		[Parameter(Mandatory=$true, HelpMessage = "Please enter the O365 Admin User Name")]
-        [string]$Username,
-	    [Parameter(Mandatory=$true, HelpMessage = "Please enter the O365 Admin Password")]
-        [string]$Password 
+		[Parameter(Mandatory=$true, HelpMessage = "Please enter Office 365 Credential")]
+        [PSCredential]$Credential
        )
-
-$SecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
-[PSCredential ]$cred = New-Object PSCredential ($Username, $SecurePassword)
 
 #region###### create New online Oauth server and Exchangeonline partner Application
 write "##################New csonline session to get tenant id#########################"
 #Get the Lync Online TenantId
-$session= New-CsOnlineSession -Credential $cred
+$session= New-CsOnlineSession -Credential $Credential
 Import-PSSession $session -AllowClobber
 $TenantID = (Get-CsTenant ).TenantId
 Remove-PSSession $session
@@ -66,7 +61,7 @@ Set-CsOAuthConfiguration -ServiceName 00000004-0000-0ff1-ce00-000000000000
 write "##################Connect to Office 365#########################"
 #Now you can login using that credential object:
 Import-Module MSOnlineExtended
-Connect-MsolService -Credential $cred
+Connect-MsolService -Credential $Credential
 
 #Export Oauth certificate to a Base64 format
 $cert = get-childitem Cert:\LocalMachine\My | where  {$_.FriendlyName -match 'OathCert'}
@@ -100,10 +95,8 @@ Function Disable-EXOnlineOauth {
 Param (		
 		[Parameter(Mandatory=$true, HelpMessage = "Please enter the Domain name you want to remove")]
         [String]$DomainName,
-		[Parameter(Mandatory=$true, HelpMessage = "Please enter the O365 Admin User Name")]
-        [string]$Username,
-	    [Parameter(Mandatory=$true, HelpMessage = "Please enter the O365 Admin Password")]
-        [string]$Password 
+		[Parameter(Mandatory=$true, HelpMessage = "Please enter Office 365 Credential")]
+        [PSCredential]$Credential
        )
 
 #remove Microsoft Oauth server
@@ -114,11 +107,8 @@ Remove-CsPartnerApplication microsoft.exchange
 
 
 write "##################Connect to Office 365#########################"
-$SecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
-[PSCredential ]$cred = New-Object PSCredential ($Username, $SecurePassword)
-#Now you can login using that credential object:
 Import-Module MSOnlineExtended
-Connect-MsolService -Credential $cred
+Connect-MsolService -Credential $Credential
 
 #Delete Oauth Certificate
 $keyId=(Get-MsolServicePrincipalCredential -AppPrincipalId 00000004-0000-0ff1-ce00-000000000000 -ReturnKeyValues 1).keyId.Guid
@@ -143,17 +133,13 @@ Param (
         [String]$DomainName,
         [Parameter(Mandatory=$true, HelpMessage = "Please enter the Default O365 Domain name *.onmicrosoft.com")]
         [String]$O365defaultDomain,
-		[Parameter(Mandatory=$true, HelpMessage = "Please enter the O365 Admin User Name")]
-        [string]$Username,
-	    [Parameter(Mandatory=$true, HelpMessage = "Please enter the O365 Admin Password")]
-        [string]$Password 
+		[Parameter(Mandatory=$true, HelpMessage = "Please enter Office 365 Credential")]
+        [PSCredential]$Credential
        )
 
 #region Actions to perform on Exchange online
 write "##################Connect to Exchange Online#########################"
-$SecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
-[PSCredential ]$cred = New-Object PSCredential ($Username, $SecurePassword)
-$O365sess = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://ps.outlook.com/powershell -Credential $cred -Authentication Basic -AllowRedirection
+$O365sess = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://ps.outlook.com/powershell -Credential $Credential -Authentication Basic -AllowRedirection
 Import-PSSession $O365sess -AllowClobber
 
 #Create UM Dialplan
@@ -203,17 +189,13 @@ function Remove-ExUM {
 Param (		
 		[Parameter(Mandatory=$true, HelpMessage = "Please enter your O365 Domain")]
         [String]$DomainName,
-		[Parameter(Mandatory=$true, HelpMessage = "Please enter the O365 Admin User Name")]
-        [string]$Username,
-	    [Parameter(Mandatory=$true, HelpMessage = "Please enter the O365 Admin Password")]
-        [string]$Password 
+		[Parameter(Mandatory=$true, HelpMessage = "Please enter Office 365 Credential")]
+        [PSCredential]$Credential
        )
 
 #region Actions to perform on Exchange online
 write "##################Connect to Exchange Online#########################"
-$SecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
-[PSCredential ]$cred = New-Object PSCredential ($Username, $SecurePassword)
-$O365sess = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://ps.outlook.com/powershell -Credential $cred -Authentication Basic -AllowRedirection
+$O365sess = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://ps.outlook.com/powershell -Credential $Credential -Authentication Basic -AllowRedirection
 Import-PSSession $O365sess -AllowClobber
 
 #Disable Mailboxes for UM

@@ -139,22 +139,21 @@ Login-AzureRmAccount -Credential $cred
 Select-AzureRmSubscription -SubscriptionName $subscriptionName
 
 #Create new Zone
-New-AzureRmDnsZone -Name $DomainName -ResourceGroupName $ResourceGroupName -ErrorAction Continue
+New-AzureRmDnsZone -Name $Domain -ResourceGroupName $ResourceGroupName -ErrorAction Continue
 
 #Add skype and ADFS records
 if ($LoadBalancerDNSName) {
-    $sipurl = 'sip.'+$DomainName+'.'
-    New-AzureRmDnsRecordSet -Name sip -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $LoadBalancerDNSName) -ErrorAction Continue
-    New-AzureRmDnsRecordSet -Name webext -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
-    New-AzureRmDnsRecordSet -Name meet -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
-    New-AzureRmDnsRecordSet -Name dialin -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
-    New-AzureRmDnsRecordSet -Name lyncdiscover -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
-    New-AzureRmDnsRecordSet -Name sts -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
-    New-AzureRmDnsRecordSet -Name _sipfederationtls._tcp -RecordType "SRV" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -Port 5061 -Priority 0 -Weight 10 -Target $sipurl) -ErrorAction Continue
-    New-AzureRmDnsRecordSet -Name _sip._tls -RecordType "SRV" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -Port 5061 -Priority 0 -Weight 10 -Target $sipurl) -ErrorAction Continue
+    $sipurl = 'sip.'+$Domain+'.'
+    New-AzureRmDnsRecordSet -Name sip -RecordType "CName" -ZoneName $Domain -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $LoadBalancerDNSName) -ErrorAction Continue
+    New-AzureRmDnsRecordSet -Name webext -RecordType "CName" -ZoneName $Domain -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
+    New-AzureRmDnsRecordSet -Name meet -RecordType "CName" -ZoneName $Domain -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
+    New-AzureRmDnsRecordSet -Name dialin -RecordType "CName" -ZoneName $Domain -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
+    New-AzureRmDnsRecordSet -Name lyncdiscover -RecordType "CName" -ZoneName $Domain -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
+    New-AzureRmDnsRecordSet -Name sts -RecordType "CName" -ZoneName $Domain -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
+    New-AzureRmDnsRecordSet -Name _sipfederationtls._tcp -RecordType "SRV" -ZoneName $Domain -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -Port 5061 -Priority 0 -Weight 10 -Target $sipurl) -ErrorAction Continue
+    New-AzureRmDnsRecordSet -Name _sip._tls -RecordType "SRV" -ZoneName $Domain -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -Port 5061 -Priority 0 -Weight 10 -Target $sipurl) -ErrorAction Continue
     }
 
 }
-
 
 

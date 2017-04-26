@@ -4,14 +4,25 @@
 
 #region###########################     Block 1                ####### PARAMETERS     
 $DomainName = "LabXXXXX.o365ready.com"
+$subDomainName = "corp."+$DomainName
 $O365defaultDomain = "xxxxxxxx.onmicrosoft.com"
-$Username= "admin@xxxxxxx.onmicrosoft.com"
-$Password = "pass@word"
-$AzureUsername = "admin@labXXXXX.onmicrosoft.com"
-$AzurePassword = "pass@word"
 $ResourceGroupName = "labXXXXX"
 $subscriptionName = "Free Trial"
 #$LBDNSName = "labxxxxxdmz.westeurope.cloudapp.azure.com." -- Not used
+
+#O365 credential
+$Username= "admin@xxxxxxx.onmicrosoft.com"
+#$Password = "pass@word"
+#$SecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
+#[PSCredential ]$O365Cred = New-Object PSCredential ($Username, $SecurePassword)
+$O365Cred = Get-credential -UserName $Username -message "Office365 Online credential"
+
+#Azure credential
+$AzureUsername = "admin@labXXXXX.onmicrosoft.com"
+#$AzurePassword = "pass@word"
+#$SecurePassword = ConvertTo-SecureString -String $AzurePassword -AsPlainText -Force
+#[PSCredential ]$AzureCred = New-Object PSCredential (AzureUsername, $SecurePassword)
+$AzureCred = Get-credential -UserName $AzureUsername -message "Azure credential"
 #endregion#############################################################
 
 
@@ -29,11 +40,10 @@ Install-Module AzureRM.Dns -Confirm:$false -Force
 
 
 
-#region###########################     Block 3                ####### CuSTOM DOMAIN
+#region###########################     Block 3                ####### CUSTOM DOMAIN
 Import-Module $env:USERPROFILE\Desktop\Scripts\Office365scripts.ps1
 
-Add-CustomDomain -DomainName $DomainName -Username $Username -Password $Password `
-                 -AzureUsername $AzureUsername -AzurePassword $AzurePassword -ResourceGroupName $ResourceGroupName -subscriptionName $subscriptionName
+Add-CustomDomain -DomainName $DomainName -Credential $O365Cred -AzureCredential $AzureCred -ResourceGroupName $ResourceGroupName -subscriptionName $subscriptionName
 
 #Remove-CustomDomain -DomainName $DomainName -Username $Username -Password $Password
 #New-AzureDnsZone -DomainName $DomainName -Username "" -Password "" -ResourceGroupName "" -subscriptionName "" -LoadBalancerDNSName ""
@@ -45,7 +55,7 @@ Remove-Module Office365scripts
 #region###########################     Block 4                ####### LICENSE SYNCED USERS
 Import-module $env:USERPROFILE\Desktop\Scripts\EnableUserLicenses.ps1
 
-Enable-UserLicence -DomainName $DomainName -Username $Username -Password $Password 
+Enable-UserLicence -DomainName $DomainName -Credential $O365Cred 
 
 Remove-Module EnableUserLicenses
 #endregion#############################################################
@@ -61,7 +71,7 @@ New-CsHostingProvider -Identity "Exchange Online" -Enabled $True -EnabledSharedA
 #region###########################     Block 6                ####### ENABLE OAUTH WITH EX ONLINE (for skype meeting)
 Import-module $env:USERPROFILE\Desktop\Scripts\ExchangeOnlineScripts.ps1
 
-Enable-ExOnlineOauth -DomainName $DomainName -Username $Username -Password $Password
+Enable-ExOnlineOauth -DomainName $DomainName -Credential $O365Cred 
 #Disable-EXOnlineOauth -DomainName $DomainName -Username $Username -Password $Password
 
 Remove-Module ExchangeOnlineScripts
@@ -73,7 +83,7 @@ Remove-Module ExchangeOnlineScripts
 Import-module $env:USERPROFILE\Desktop\Scripts\ExchangeOnlineScripts.ps1
 
 #Deploy ExUM
-Deploy-ExUM -DomainName $DomainName -O365defaultDomain $O365defaultDomain -Username $Username -Password $Password
+Deploy-ExUM -DomainName $DomainName -O365defaultDomain $O365defaultDomain -Credential $O365Cred 
 #Remove ExUM
 #Remove-UMDP -DomainName $DomainName -Username $Username -Password $Password
 
@@ -88,9 +98,7 @@ Remove-CsHostingProvider -Identity 'Skype For Business Online'
 New-CSHostingProvider -Identity 'Skype For Business Online' -ProxyFqdn "sipfed.online.lync.com" -Enabled $true -EnabledSharedAddressSpace $true -HostsOCSUsers $true -VerificationLevel UseSourceVerification -IsLocal $false -AutodiscoverUrl https://webdir.online.lync.com/Autodiscover/AutodiscoverService.svc/root
 
 #configure online
-$SecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
-[PSCredential ]$cred = New-Object PSCredential ($Username, $SecurePassword)
-$session= New-CsOnlineSession -Credential $cred
+$session= New-CsOnlineSession -Credential $O365Cred 
 Import-PSSession $session -AllowClobber
 Set-CsTenantFederationConfiguration -SharedSipAddressSpace $true
 Get-CsTenantFederationConfiguration
@@ -111,9 +119,7 @@ $users | ForEach-Object {
     }
 
 #Connect CS online
-$SecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
-[PSCredential ]$cred = New-Object PSCredential ($Username, $SecurePassword)
-$session= New-CsOnlineSession -Credential $cred
+$session= New-CsOnlineSession -Credential $O365Cred 
 Import-PSSession $session -AllowClobber
 $HostedMigrationurl = 'https://'+$session.ComputerName+'/HostedMigration/hostedmigrationservice.svc'
 write $HostedMigrationurl
