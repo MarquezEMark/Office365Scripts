@@ -2,14 +2,10 @@
 Param (		
 		[Parameter(Mandatory=$true, HelpMessage = "Please enter the Domain name you want to remove")]
         [String]$DomainName,
-		[Parameter(Mandatory=$true, HelpMessage = "Please enter the O365 Admin User Name")]
-        [string]$Username,
-	    [Parameter(Mandatory=$true, HelpMessage = "Please enter the O365 Admin Password")]
-        [string]$Password,
-        [Parameter(Mandatory=$true, HelpMessage = "Please enter the Azure Admin User Name")]
-        [string]$AzureUsername,
-	    [Parameter(Mandatory=$true, HelpMessage = "Please enter the Azure Admin Password")]
-        [string]$AzurePassword,
+		[Parameter(Mandatory=$true, HelpMessage = "Please enter Office 365 Credential")]
+        [PSCredential]$Credential,
+		[Parameter(Mandatory=$true, HelpMessage = "Please enter the Azure Credential")]
+        [PSCredential]$AzureCredential,
         [Parameter(Mandatory=$true, HelpMessage = "Please enter the Resource group Name which contains the zone")]
         [string]$ResourceGroupName,
         [Parameter(Mandatory=$true, HelpMessage = "Please enter the Azure subscription Name of the resource")]
@@ -21,17 +17,11 @@ Param (
 
 
 write "##################Connect to Office 365#########################"
-$SecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
-[PSCredential ]$cred = New-Object PSCredential ($Username, $SecurePassword)
-#Now you can login using that credential object:
 Import-Module MSOnline
-Connect-MsolService -Credential $cred
+Connect-MsolService -Credential $Credential
 
 write "##################Connect to Azure##############################"
-$SecurePassword = ConvertTo-SecureString -String $AzurePassword -AsPlainText -Force
-[PSCredential ]$cred = New-Object PSCredential ($AzureUsername, $SecurePassword)
-#Now you can login using that credential object:
-Login-AzureRmAccount -Credential $cred
+Login-AzureRmAccount -Credential $AzureCredential
 Select-AzureRmSubscription -SubscriptionName $subscriptionName
 
 
@@ -54,7 +44,7 @@ Confirm-MsolDomain -DomainName $DomainName -ErrorAction Continue
 
 write "############create Exchange Office 365 DNS record in Azure##########"
 #Exchange Records
-$MX = $DomainName + '.mail.protection.outlook.com'
+$MX = $DomainName.replace('.','-') + '.mail.protection.outlook.com'
 $SPF = "v=spf1 include:spf.protection.outlook.com -all"
 $Auto = "autodiscover.outlook.com"
 New-AzureRmDnsRecordSet -Name '@' -RecordType "MX" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -Exchange $MX -Preference 0) -Overwrite
@@ -71,19 +61,14 @@ Function Remove-CustomDomain {
 Param (		
 		[Parameter(Mandatory=$true, HelpMessage = "Please enter the Domain name you want to remove")]
         [String]$DomainName,
-		[Parameter(Mandatory=$true, HelpMessage = "Please enter the O365 Admin User Name")]
-        [string]$Username,
-	    [Parameter(Mandatory=$true, HelpMessage = "Please enter the O365 Admin Password")]
-        [string]$Password
+		[Parameter(Mandatory=$true, HelpMessage = "Please enter Office 365 Credential")]
+        [PSCredential]$Credential
 
        )
 	   
 write "################# Connect to Office 365#########################"
-$SecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
-[PSCredential ]$cred = New-Object PSCredential ($Username, $SecurePassword)
-#Now you can login using that credential object:
 Import-Module MSOnline
-Connect-MsolService -Credential $cred
+Connect-MsolService -Credential $Credential
 
 
 write "################ Get all existing Domains........###############"
@@ -117,10 +102,8 @@ Function New-AzureDnsZone {
 Param (		
 		[Parameter(Mandatory=$true, HelpMessage = "Please enter the DNS Zone name you want to create")]
         [String]$DomainName,
-		[Parameter(Mandatory=$true, HelpMessage = "Please enter the Azure Admin User Name")]
-        [string]$Username,
-	    [Parameter(Mandatory=$true, HelpMessage = "Please enter the Azure Admin Password")]
-        [string]$Password,
+		[Parameter(Mandatory=$true, HelpMessage = "Please enter the Azure Credential")]
+        [PSCredential]$Credential,
         [Parameter(Mandatory=$true, HelpMessage = "Please enter the Resource group Name which will contain the zone")]
         [string]$ResourceGroupName,
         [Parameter(Mandatory=$true, HelpMessage = "Please enter the Azure subscription Name to use")]
@@ -129,13 +112,8 @@ Param (
         [string]$LoadBalancerDNSName
 
        )
-#Create a PSCredential object: you have to use an Azure AD user not the live ID one
-#$cred = Get-Credential -UserName "ieb@ukpdu1.onmicrosoft.com"  -Message " Login AzureRM"
-$SecurePassword = ConvertTo-SecureString -String $Password -AsPlainText -Force
-[PSCredential ]$cred = New-Object PSCredential ($Username, $SecurePassword)
-
 #Now you can login using that credential object:
-Login-AzureRmAccount -Credential $cred
+Login-AzureRmAccount -Credential $Credential
 Select-AzureRmSubscription -SubscriptionName $subscriptionName
 
 #Create new Zone
@@ -144,17 +122,48 @@ New-AzureRmDnsZone -Name $DomainName -ResourceGroupName $ResourceGroupName -Erro
 #Add skype and ADFS records
 if ($LoadBalancerDNSName) {
     $sipurl = 'sip.'+$DomainName+'.'
-    New-AzureRmDnsRecordSet -Name sip -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $LoadBalancerDNSName) -ErrorAction Continue
-    New-AzureRmDnsRecordSet -Name webext -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
-    New-AzureRmDnsRecordSet -Name meet -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
-    New-AzureRmDnsRecordSet -Name dialin -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
-    New-AzureRmDnsRecordSet -Name lyncdiscover -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
-    New-AzureRmDnsRecordSet -Name sts -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue
-    New-AzureRmDnsRecordSet -Name _sipfederationtls._tcp -RecordType "SRV" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -Port 5061 -Priority 0 -Weight 10 -Target $sipurl) -ErrorAction Continue
-    New-AzureRmDnsRecordSet -Name _sip._tls -RecordType "SRV" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -Port 5061 -Priority 0 -Weight 10 -Target $sipurl) -ErrorAction Continue
+    New-AzureRmDnsRecordSet -Name sip -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $LoadBalancerDNSName) -ErrorAction Continue -Overwrite
+    New-AzureRmDnsRecordSet -Name webext -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue -Overwrite
+    New-AzureRmDnsRecordSet -Name meet -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue -Overwrite
+    New-AzureRmDnsRecordSet -Name dialin -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue -Overwrite
+    New-AzureRmDnsRecordSet -Name lyncdiscover -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue -Overwrite
+    New-AzureRmDnsRecordSet -Name sts -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName $sipurl) -ErrorAction Continue -Overwrite
+    New-AzureRmDnsRecordSet -Name _sipfederationtls._tcp -RecordType "SRV" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -Port 5061 -Priority 0 -Weight 10 -Target $sipurl) -ErrorAction Continue -Overwrite
+    New-AzureRmDnsRecordSet -Name _sip._tls -RecordType "SRV" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -Port 5061 -Priority 0 -Weight 10 -Target $sipurl) -ErrorAction Continue -Overwrite
     }
 
 }
 
+Function Set-AzureDnsOnlineRecords {
 
+Param (		
+		[Parameter(Mandatory=$true, HelpMessage = "Please enter the DNS Zone name you want to create")]
+        [String]$DomainName,
+		[Parameter(Mandatory=$true, HelpMessage = "Please enter the Azure Credential")]
+        [PSCredential]$Credential,
+        [Parameter(Mandatory=$true, HelpMessage = "Please enter the Resource group Name which will contain the zone")]
+        [string]$ResourceGroupName,
+        [Parameter(Mandatory=$true, HelpMessage = "Please enter the Azure subscription Name to use")]
+        [string]$subscriptionName
+
+       )
+#Now you can login using that credential object:
+Login-AzureRmAccount -Credential $Credential
+Select-AzureRmSubscription -SubscriptionName $subscriptionName
+
+#Create new Zone if it does not exist
+New-AzureRmDnsZone -Name $DomainName -ResourceGroupName $ResourceGroupName -ErrorAction Continue
+
+#Add skype online DNS records
+New-AzureRmDnsRecordSet -Name sip -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName sipdir.online.lync.com) -ErrorAction Continue -Overwrite
+New-AzureRmDnsRecordSet -Name lyncdiscover -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName webdir.online.lync.com) -ErrorAction Continue -Overwrite
+New-AzureRmDnsRecordSet -Name _sipfederationtls._tcp -RecordType "SRV" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -Port 5061 -Priority 1 -Weight 10 -Target sipfed.online.lync.com) -ErrorAction Continue -Overwrite
+New-AzureRmDnsRecordSet -Name _sip._tls -RecordType "SRV" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -Port 443 -Priority 1 -Weight 100 -Target sipdir.online.lync.com) -ErrorAction Continue -Overwrite
+
+#Intune records
+New-AzureRmDnsRecordSet -Name msoid -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName clientconfig.microsoftonline-p.net) -ErrorAction Continue -Overwrite
+New-AzureRmDnsRecordSet -Name enterpriseregistration -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName enterpriseregistration.windows.net) -ErrorAction Continue -Overwrite
+New-AzureRmDnsRecordSet -Name enterpriseenrollment -RecordType "CName" -ZoneName $DomainName -ResourceGroupName $ResourceGroupName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig -CName enterpriseenrollment.manage.microsoft.com) -ErrorAction Continue -Overwrite
+
+}
 
