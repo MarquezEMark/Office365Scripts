@@ -32,7 +32,8 @@ $AzureCred = Get-credential -UserName $AzureUsername -message "Azure credential"
 Invoke-WebRequest -Uri https://download.microsoft.com/download/5/0/1/5017D39B-8E29-48C8-91A8-8D0E4968E6D4/en/msoidcli_64.msi -OutFile c:\msoidcli_64.msi
 Start-Process -FilePath msiexec -ArgumentList /i, c:\msoidcli_64.msi, /quiet -Wait
 #Download and install MWindows Azure Active Directory Module for Windows PowerShell
-Invoke-WebRequest -Uri https://go.microsoft.com/fwlink/p/?linkid=236297 -OutFile c:\AdministrationConfig-en.msi
+#Invoke-WebRequest -Uri https://go.microsoft.com/fwlink/p/?linkid=236297 -OutFile c:\AdministrationConfig-en.msi
+Invoke-WebRequest -Uri "http://download.connect.microsoft.com/pr/AdministrationConfig_3.msi?t=81017406-00d3-47f5-acc6-cfcad5aa3869&e=1496264044&h=0c61bb8c735b47302a24133aecd216a6" -OutFile c:\AdministrationConfig-en.msi
 Start-Process -FilePath msiexec -ArgumentList /i, c:\AdministrationConfig-en.msi, /quiet -Wait
 Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
 Install-Module AzureRM.Dns -Confirm:$false -Force
